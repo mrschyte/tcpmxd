@@ -1,0 +1,13 @@
+module TCPMXDConf
+    class Fortune
+        def handle(client)
+            client.puts %x["fortune"]
+        end
+    end
+
+    Services = {
+        'ssh'       => {:type => :forward,  :host    => '127.0.0.1', :port   => 22      }, 
+        'web'       => {:type => :forward,  :host    => '127.0.0.1', :port   => 80      },
+        'fortune'   => {:type => :internal, :object  => Fortune.new, :method => :handle }
+    }
+end
