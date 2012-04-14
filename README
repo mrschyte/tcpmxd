@@ -1,0 +1,57 @@
+= FAQ ===
+
+Q: What is TCPMUX?
+A: TCPMUX stands for "TCP Port Service Multiplexer". It is basically a
+simple protocol for exposing multiple named services on a single port.
+The protocol is described in RFC-1078. [1]
+
+Q: Aren't there tcpmux servers already?
+A: Yes, there are two that I know of (in inet.d and xinet.d), but you
+cannot change the default port number from the IANA assigned tcpmux port,
+and I wanted to use port 22, because of firewall restrictions. Also I
+wanted something simple and easy to customize.
+
+Q: What about clients?
+A: I don't know about any widespread clients. Though netcat works with
+some hacking :)
+
+Q: So how do I use this?
+A: You have to describe the services you want share in the configuration
+file tcpmxd.cf. You can add simple tcp fowarders and internally defined
+ruby functions. After that you have to run the server, and connect to it
+with the client.
+
+Q: How does the config file look like?
+A: It's a simple ruby module:
+    > module TCPMXDConf
+    >     class Fortune
+    >         def handle(client)
+    >             client.puts %x["fortune"]
+    >         end
+    >     end
+    >
+    >     Services = {
+    >       # forwarded services
+    >         'ssh'       => {:type => :forward,  :host    => '127.0.0.1', :port   => 22      }, 
+    >         'web'       => {:type => :forward,  :host    => '127.0.0.1', :port   => 80      },
+    >       # internal service
+    >         'fortune'   => {:type => :internal, :object  => Fortune.new, :method => :handle }
+    >     }
+    > end
+
+Q: How does the client work?
+A: It listens on a given port, and when a connection is made it forwards all
+traffic to the server after doing a handshake.
+
+= Example ===
+
+:: Run the tcpmux daemon on target.box, binding to 0.0.0.0:22022:
+> tcpmxd -d -p 22022
+
+:: Connect to a tcpmux shell service running on port 22022 and bind to localhost:3333.
+> tcpmxc -p 22022 target.box 3333 ssh
+
+:: Then in another terminal you can:
+> ssh user@localhost -p 3333
+
+[1] http://tools.ietf.org/html/rfc1078
